@@ -2,7 +2,6 @@
 """
 Parameterize a unit test
 """
-
 import unittest
 from unittest.mock import (
     patch,
