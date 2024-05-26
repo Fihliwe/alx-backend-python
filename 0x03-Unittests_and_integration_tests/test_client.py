@@ -75,6 +75,40 @@ class TestGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("some_org")
         assert client.has_license(repo, license_key) == expected
     
+    @patch('client.get_json')
+    def test_public_repos(self, mock_get_json):
+        """Test that GithubOrgClient.public_repos returns the expected list of repos"""
+        mock_get_json.return_value = [
+            {"name": "repo1"},
+            {"name": "repo2"},
+            {"name": "repo3"},
+        ]
+
+        client = GithubOrgClient('test_org')
+        repos = client.public_repos()
+        self.assertEqual(repos, ["repo1", "repo2", "repo3"])
+
+    @parameterized.expand([
+        ("apache-2.0", [
+            {"name": "repo1", "license": {"key": "apache-2.0"}},
+            {"name": "repo2", "license": {"key": "mit"}},
+            {"name": "repo3", "license": {"key": "apache-2.0"}},
+        ], ["repo1", "repo3"]),
+        ("mit", [
+            {"name": "repo1", "license": {"key": "apache-2.0"}},
+            {"name": "repo2", "license": {"key": "mit"}},
+            {"name": "repo3", "license": {"key": "apache-2.0"}},
+        ], ["repo2"]),
+    ])
+    @patch('client.get_json')
+    def test_public_repos_with_license(self, license, repos_payload, expected, mock_get_json):
+        """Test that GithubOrgClient.public_repos with a license argument filters repos correctly"""
+        mock_get_json.return_value = repos_payload
+
+        client = GithubOrgClient('test_org')
+        repos = client.public_repos(license)
+        self.assertEqual(repos, expected)
+        
 @parameterized_class([
     {"org_payload": org_payload, "repos_payload": repos_payload, 
      "expected_repos": expected_repos, "apache2_repos": apache2_repos}
